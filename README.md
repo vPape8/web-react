@@ -1,3 +1,4 @@
+<<<<<<< README.md
 # Frontend - Aplicación de Gestión de Transporte
 
 ## Descripción
