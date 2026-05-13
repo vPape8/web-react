@@ -1,16 +1,21 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../assets/css/auth.css'
-import { API_URLS } from '../config/api'
-
-// URL del backend desde configuración centralizada
-const API_URL = API_URLS.AUTH;
+import { API_AUTH } from '../config/api'
+import { postPublic } from '../utils/http'
+import { saveSession } from '../utils/auth'
 
 const InicioSeccion = () => {
   const navigate = useNavigate()
   const [mode, setMode] = useState('login') 
-  // CAMBIO 1: Usamos 'email' en lugar de 'username'
-  const [form, setForm] = useState({ email: '', password: '', rol: 'USER' })
+  // Se agregan nombre y apellido al estado inicial
+  const [form, setForm] = useState({ 
+    nombre: '', 
+    apellido: '', 
+    email: '', 
+    password: '', 
+    rol: 'USER' 
+  })
   const [message, setMessage] = useState('')
 
   const handleChange = (e) => {
@@ -22,78 +27,57 @@ const InicioSeccion = () => {
     e.preventDefault()
     setMessage('Conectando...')
     
-    // CAMBIO 2: Validación de email
     if (!form.email || !form.password) {
         setMessage('Por favor ingresa correo y contraseña');
         return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // CAMBIO 3: Enviamos 'email' al backend
-        body: JSON.stringify({ email: form.email, password: form.password })
+      const data = await postPublic(API_AUTH.LOGIN, {
+        email: form.email,
+        password: form.password
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        // 1. Guardar Token REAL
-        localStorage.setItem('token', data.token); 
-        
-        // 2. Guardar Usuario Visual (Legacy) usando el email como nombre
-        const usuarioVisual = { 
-            id: Date.now(),
-            name: form.email.split('@')[0], // Usamos la parte antes del @ como nombre
-            email: form.email,
-            rol: 'USER' 
-        };
-        localStorage.setItem('current_user', JSON.stringify(usuarioVisual));
+      // 1. Guardar para las utilidades de auth (token, rol, etc.)
+      saveSession(data);
 
-        setMessage('Inicio de sesión correcto');
-        
-        window.dispatchEvent(new CustomEvent('user-changed', { detail: usuarioVisual }));
+      // 2. CORRECCIÓN: Guardar el objeto 'current_user' que esperan Header y Panel
+      const userObj = { name: data.nombre, email: form.email, rol: data.rol };
+      localStorage.setItem('current_user', JSON.stringify(userObj));
 
-        navigate('/'); 
-      } else {
-        setMessage('Credenciales incorrectas');
-      }
-    } catch (error) {
-      console.error(error);
-      setMessage('Error de conexión con el servidor');
+      setMessage('Inicio de sesión correcto');
+      
+      // 3. Notificar al sistema
+      window.dispatchEvent(new CustomEvent('user-changed', {
+        detail: userObj
+      }));
+
+      // Redirigir
+      data.rol === 'ADMIN' ? navigate('/panel') : navigate('/home');
+
+    } catch (err) {
+      setMessage(err.message || 'Credenciales incorrectas');
     }
   }
 
   const handleRegister = async (e) => {
     e.preventDefault()
     
-    if (!form.email || !form.password) {
+    // Validación para asegurar que todos los campos requeridos por la BD estén presentes
+    if (!form.email || !form.password || !form.nombre || !form.apellido) {
       setMessage('Completa todos los campos')
       return
     }
 
     try {
       setMessage('Registrando...')
-      const response = await fetch(`${API_URL}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // CAMBIO 4: Enviamos el formulario completo que ya tiene 'email'
-        body: JSON.stringify(form)
-      });
-
-      if (response.ok) {
-        setMessage('Registro exitoso. Ahora inicia sesión.');
-        setMode('login');
-        // Limpiamos el formulario manteniendo el email para facilitar el login
-        setForm(prev => ({ ...prev, password: '' }));
-      } else {
-        // Intentamos leer el mensaje de error del backend si existe
-        const errorText = await response.text();
-        setMessage(errorText || 'Error al registrar. El correo podría ya existir.');
-      }
-    } catch (error) {
-      setMessage('Error de conexión');
+      // Se envía el objeto form completo incluyendo nombre y apellido
+      await postPublic(API_AUTH.REGISTER, form);
+      setMessage('Registro exitoso. Ahora inicia sesión.');
+      setMode('login');
+      setForm({ nombre: '', apellido: '', email: '', password: '', rol: 'USER' });
+    } catch (err) {
+      setMessage(err.message || 'Error al registrar. El correo podría ya existir.');
     }
   }
 
@@ -103,7 +87,36 @@ const InicioSeccion = () => {
         <h2 className="text-center mb-4">{mode === 'login' ? 'Iniciar Sesión' : 'Registro'}</h2>
         <form onSubmit={mode === 'login' ? handleLogin : handleRegister}>
             
-            {/* CAMBIO 5: Input de tipo Email */}
+            {/* Campos adicionales para el modo Registro */}
+            {mode === 'register' && (
+              <>
+                <div className="mb-3">
+                  <label className="form-label">Nombre</label>
+                  <input 
+                    name="nombre" 
+                    type="text"
+                    value={form.nombre} 
+                    onChange={handleChange} 
+                    className="form-control" 
+                    placeholder="Tu nombre"
+                    required 
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Apellido</label>
+                  <input 
+                    name="apellido" 
+                    type="text"
+                    value={form.apellido} 
+                    onChange={handleChange} 
+                    className="form-control" 
+                    placeholder="Tu apellido"
+                    required 
+                  />
+                </div>
+              </>
+            )}
+
             <div className="mb-3">
               <label className="form-label">Correo Electrónico</label>
               <input 

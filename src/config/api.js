@@ -1,39 +1,37 @@
-// Configuración centralizada de APIs
-// Cambia estas URLs según necesites
+// URL base del BFF — se inyecta desde .env según el entorno
+const BASE = import.meta.env.VITE_API_BASE;
 
-const API_CONFIG = {
-  // Opción 1: Servidor local (para desarrollo)
-  LOCAL: {
-    BASE_URL: 'http://localhost:8080',
-    BOLETA: '/api/boleta',
-    BOLETAS: '/api/boletas', 
-    AUTH: '/auth'
-  },
-  
-  // Opción 2: Servidor AWS EC2 (producción)
-  PRODUCTION: {
-    BASE_URL: 'http://54.88.10.118:8080',
-    BOLETA: '/api/boleta',
-    BOLETAS: '/api/boletas',
-    AUTH: '/auth'
-  },
-  
-  // Opción 3: Servidor mock/datos falsos (para pruebas)
-  MOCK: {
-    BASE_URL: 'http://localhost:3001',
-    BOLETA: '/api/boleta',
-    BOLETAS: '/api/boletas',
-    AUTH: '/auth'
-  }
+// ── Auth (rutas públicas, sin token) ──────────────────────────
+export const API_AUTH = {
+  LOGIN:    `${BASE}/auth/login`,
+  REGISTER: `${BASE}/auth/register`,
 };
 
-// Selecciona qué configuración usar: 'LOCAL', 'PRODUCTION', o 'MOCK'
-const CURRENT_ENV = 'MOCK'; // Cambia esto según necesites
+// ── Puertos ───────────────────────────────────────────────────
+export const API_PUERTOS = {
+  BASE:     `${BASE}/api/puertos`,
+  BY_ID:    (id) => `${BASE}/api/puertos/${id}`,
+};
 
+// ── Buques ────────────────────────────────────────────────────
+export const API_BUQUES = {
+  BASE:     `${BASE}/api/buques`,
+  BY_ID:    (id) => `${BASE}/api/buques/${id}`,
+};
+
+// ── Operaciones ───────────────────────────────────────────────
+export const API_OPERACIONES = {
+  BASE:     `${BASE}/api/operaciones`,
+  BY_ID:    (id) => `${BASE}/api/operaciones/${id}`,
+  SIMULAR:  `${BASE}/api/operaciones/simular`,
+  CALCULAR: `${BASE}/api/operaciones/calcula`,
+};
+
+// Agregar al final de src/config/api.js
 export const API_URLS = {
-  BOLETA: `${API_CONFIG[CURRENT_ENV].BASE_URL}${API_CONFIG[CURRENT_ENV].BOLETA}`,
-  BOLETAS: `${API_CONFIG[CURRENT_ENV].BASE_URL}${API_CONFIG[CURRENT_ENV].BOLETAS}`,
-  AUTH: `${API_CONFIG[CURRENT_ENV].BASE_URL}${API_CONFIG[CURRENT_ENV].AUTH}`
+  AUTH:    `${BASE}/auth`,
+  BOLETA:  `${BASE}/api/operaciones`,
+  BOLETAS: `${BASE}/api/operaciones`,
 };
 
 export default API_URLS;

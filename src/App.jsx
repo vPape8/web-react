@@ -20,9 +20,9 @@ function App() {
         <Layout>
           <Routes>
                 <Route path="/login" element={<InicioSeccion />} />
-                <Route path="/" element={<PrivateRoute><Home/></PrivateRoute>} />
+                <Route path="/home" element={<PrivateRoute><Home/></PrivateRoute>} />
                 <Route path="/calculadora" element={<PrivateRoute><Calculadora/></PrivateRoute>} />
-                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="/" element={<Navigate to="/home" replace />} />
                 <Route path="/comerciales" element={<PrivateRoute><Comerciales/></PrivateRoute>} /> 
                 <Route path="/reportes" element={<PrivateRoute><Reportes/></PrivateRoute>} />
                 <Route path="/contacto" element={<PrivateRoute><Contacto/></PrivateRoute>} />
