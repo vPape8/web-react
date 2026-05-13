@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../assets/css/auth.css'
-import { API_URLS } from '../config/api'
+import { API_AUTH } from '../config/api'
+import { postPublic } from '../utils/http'
+import { saveSession } from '../utils/auth'
 
-// URL del backend desde configuración centralizada
-const API_URL = API_URLS.AUTH;
+
 
 const InicioSeccion = () => {
   const navigate = useNavigate()
@@ -29,40 +30,25 @@ const InicioSeccion = () => {
     }
 
     try {
-      const response = await fetch(`${API_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // CAMBIO 3: Enviamos 'email' al backend
-        body: JSON.stringify({ email: form.email, password: form.password })
-      });
+  const data = await postPublic(API_AUTH.LOGIN, {
+    email: form.email,
+    password: form.password
+  });
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        // 1. Guardar Token REAL
-        localStorage.setItem('token', data.token); 
-        
-        // 2. Guardar Usuario Visual (Legacy) usando el email como nombre
-        const usuarioVisual = { 
-            id: Date.now(),
-            name: form.email.split('@')[0], // Usamos la parte antes del @ como nombre
-            email: form.email,
-            rol: 'USER' 
-        };
-        localStorage.setItem('current_user', JSON.stringify(usuarioVisual));
+  // Guardar sesión con los datos reales del backend
+  saveSession(data);
 
-        setMessage('Inicio de sesión correcto');
-        
-        window.dispatchEvent(new CustomEvent('user-changed', { detail: usuarioVisual }));
+  setMessage('Inicio de sesión correcto');
+  window.dispatchEvent(new CustomEvent('user-changed', {
+    detail: { name: data.nombre, email: form.email, rol: data.rol }
+  }));
 
-        navigate('/'); 
-      } else {
-        setMessage('Credenciales incorrectas');
-      }
-    } catch (error) {
-      console.error(error);
-      setMessage('Error de conexión con el servidor');
-    }
+  // Redirigir según rol real que devuelve el backend
+  data.rol === 'ADMIN' ? navigate('/panel') : navigate('/home');
+
+} catch (err) {
+  setMessage(err.message || 'Credenciales incorrectas');
+}
   }
 
   const handleRegister = async (e) => {
@@ -74,27 +60,14 @@ const InicioSeccion = () => {
     }
 
     try {
-      setMessage('Registrando...')
-      const response = await fetch(`${API_URL}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // CAMBIO 4: Enviamos el formulario completo que ya tiene 'email'
-        body: JSON.stringify(form)
-      });
-
-      if (response.ok) {
-        setMessage('Registro exitoso. Ahora inicia sesión.');
-        setMode('login');
-        // Limpiamos el formulario manteniendo el email para facilitar el login
-        setForm(prev => ({ ...prev, password: '' }));
-      } else {
-        // Intentamos leer el mensaje de error del backend si existe
-        const errorText = await response.text();
-        setMessage(errorText || 'Error al registrar. El correo podría ya existir.');
-      }
-    } catch (error) {
-      setMessage('Error de conexión');
-    }
+  setMessage('Registrando...')
+  await postPublic(API_AUTH.REGISTER, form);
+  setMessage('Registro exitoso. Ahora inicia sesión.');
+  setMode('login');
+  setForm(prev => ({ ...prev, password: '' }));
+} catch (err) {
+  setMessage(err.message || 'Error al registrar. El correo podría ya existir.');
+}
   }
 
   return (
