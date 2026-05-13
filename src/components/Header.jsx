@@ -64,7 +64,7 @@ const Header = () => {
   return (
     <Navbar bg="dark" variant="dark" expand="lg" className="navbar-dark">
       <Container>
-        <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
+        <Navbar.Brand as={Link} to="/home" className="d-flex align-items-center">
           <img 
             src="/logo.png" 
             alt="Logo" 
@@ -78,7 +78,7 @@ const Header = () => {
         
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">
-            <Nav.Link as={Link} to="/" active>
+            <Nav.Link as={Link} to="/home" active>
               Home
             </Nav.Link>
             <Nav.Link as={Link} to="/calculadora">
@@ -89,11 +89,17 @@ const Header = () => {
             </Nav.Link>
           </Nav>
           
-          <Nav id="dynamic-nav-items" className="d-flex align-items-center gap-3">
+          <Nav id="dynamic-nav-items" className="ms-auto d-flex align-items-center gap-3">
             {user ? (
-              <div className="d-flex align-items-center">
+              <div className="d-flex align-items-baseline">
                 <span className="text-light me-3 fw-bold">{user.name}</span>
-                <Button variant="outline-danger" size="sm" onClick={handleLogout}>Cerrar sesión</Button>
+                <Button 
+                  variant="outline-danger" 
+                  size="sm" 
+                  onClick={handleLogout}
+                >
+                  Cerrar sesión
+                </Button>
               </div>
             ) : (
               <Nav.Link as={Link} to="/login">Iniciar sesión</Nav.Link>
