@@ -5,13 +5,17 @@ import { API_AUTH } from '../config/api'
 import { postPublic } from '../utils/http'
 import { saveSession } from '../utils/auth'
 
-
-
 const InicioSeccion = () => {
   const navigate = useNavigate()
   const [mode, setMode] = useState('login') 
-  // CAMBIO 1: Usamos 'email' en lugar de 'username'
-  const [form, setForm] = useState({ email: '', password: '', rol: 'USER' })
+  // Se agregan nombre y apellido al estado inicial
+  const [form, setForm] = useState({ 
+    nombre: '', 
+    apellido: '', 
+    email: '', 
+    password: '', 
+    rol: 'USER' 
+  })
   const [message, setMessage] = useState('')
 
   const handleChange = (e) => {
@@ -23,51 +27,58 @@ const InicioSeccion = () => {
     e.preventDefault()
     setMessage('Conectando...')
     
-    // CAMBIO 2: Validación de email
     if (!form.email || !form.password) {
         setMessage('Por favor ingresa correo y contraseña');
         return;
     }
 
     try {
-  const data = await postPublic(API_AUTH.LOGIN, {
-    email: form.email,
-    password: form.password
-  });
+      const data = await postPublic(API_AUTH.LOGIN, {
+        email: form.email,
+        password: form.password
+      });
 
-  // Guardar sesión con los datos reales del backend
-  saveSession(data);
+      // 1. Guardar para las utilidades de auth (token, rol, etc.)
+      saveSession(data);
 
-  setMessage('Inicio de sesión correcto');
-  window.dispatchEvent(new CustomEvent('user-changed', {
-    detail: { name: data.nombre, email: form.email, rol: data.rol }
-  }));
+      // 2. CORRECCIÓN: Guardar el objeto 'current_user' que esperan Header y Panel
+      const userObj = { name: data.nombre, email: form.email, rol: data.rol };
+      localStorage.setItem('current_user', JSON.stringify(userObj));
 
-  // Redirigir según rol real que devuelve el backend
-  data.rol === 'ADMIN' ? navigate('/panel') : navigate('/home');
+      setMessage('Inicio de sesión correcto');
+      
+      // 3. Notificar al sistema
+      window.dispatchEvent(new CustomEvent('user-changed', {
+        detail: userObj
+      }));
 
-} catch (err) {
-  setMessage(err.message || 'Credenciales incorrectas');
-}
+      // Redirigir
+      data.rol === 'ADMIN' ? navigate('/panel') : navigate('/home');
+
+    } catch (err) {
+      setMessage(err.message || 'Credenciales incorrectas');
+    }
   }
 
   const handleRegister = async (e) => {
     e.preventDefault()
     
-    if (!form.email || !form.password) {
+    // Validación para asegurar que todos los campos requeridos por la BD estén presentes
+    if (!form.email || !form.password || !form.nombre || !form.apellido) {
       setMessage('Completa todos los campos')
       return
     }
 
     try {
-  setMessage('Registrando...')
-  await postPublic(API_AUTH.REGISTER, form);
-  setMessage('Registro exitoso. Ahora inicia sesión.');
-  setMode('login');
-  setForm(prev => ({ ...prev, password: '' }));
-} catch (err) {
-  setMessage(err.message || 'Error al registrar. El correo podría ya existir.');
-}
+      setMessage('Registrando...')
+      // Se envía el objeto form completo incluyendo nombre y apellido
+      await postPublic(API_AUTH.REGISTER, form);
+      setMessage('Registro exitoso. Ahora inicia sesión.');
+      setMode('login');
+      setForm({ nombre: '', apellido: '', email: '', password: '', rol: 'USER' });
+    } catch (err) {
+      setMessage(err.message || 'Error al registrar. El correo podría ya existir.');
+    }
   }
 
   return (
@@ -76,7 +87,36 @@ const InicioSeccion = () => {
         <h2 className="text-center mb-4">{mode === 'login' ? 'Iniciar Sesión' : 'Registro'}</h2>
         <form onSubmit={mode === 'login' ? handleLogin : handleRegister}>
             
-            {/* CAMBIO 5: Input de tipo Email */}
+            {/* Campos adicionales para el modo Registro */}
+            {mode === 'register' && (
+              <>
+                <div className="mb-3">
+                  <label className="form-label">Nombre</label>
+                  <input 
+                    name="nombre" 
+                    type="text"
+                    value={form.nombre} 
+                    onChange={handleChange} 
+                    className="form-control" 
+                    placeholder="Tu nombre"
+                    required 
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Apellido</label>
+                  <input 
+                    name="apellido" 
+                    type="text"
+                    value={form.apellido} 
+                    onChange={handleChange} 
+                    className="form-control" 
+                    placeholder="Tu apellido"
+                    required 
+                  />
+                </div>
+              </>
+            )}
+
             <div className="mb-3">
               <label className="form-label">Correo Electrónico</label>
               <input 

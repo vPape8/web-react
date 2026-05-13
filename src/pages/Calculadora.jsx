@@ -6,16 +6,18 @@ const Calculadora = () => {
   // Switch de Modo
   const [modoManual, setModoManual] = useState(false);
 
-  // --- ESTADOS MODO BD ---
+  // --- ESTADOS MODO BD (Registrado) ---
   const [codBuque, setCodBuque] = useState('');
   const [idPuerto, setIdPuerto] = useState('');
   const [idFuncionario, setIdFuncionario] = useState('');
+  const [tipoServicio, setTipoServicio] = useState('BASICO'); // Nuevo: Requerido por Backend
+  const [diasEstancia, setDiasEstancia] = useState('');      // Nuevo: Requerido por Backend
 
-  // --- ESTADOS MODO MANUAL ---
+  // --- ESTADOS MODO MANUAL (Simulación) ---
   const [manualData, setManualData] = useState({
     eslora: '',
     dias: '',
-    tipoBuque: 'general', // Valor por defecto
+    tipoBuque: 'general',
     pasajeros: 0,
     servicios: 'basico'
   });
@@ -25,7 +27,7 @@ const Calculadora = () => {
     mostrar: false, 
     total: 0, 
     mensaje: '',
-    nombrePuerto: '', // Nuevo campo para el nombre
+    nombrePuerto: '', 
     nombreBuque: ''
   });
   
@@ -37,11 +39,11 @@ const Calculadora = () => {
 
   const calcular = async () => {
     setStatus({ loading: false, error: '' });
-    setResultado({ mostrar: false, total: 0, mensaje: '', nombrePuerto: '', nombreBuque: '' }); // Limpiar resultado anterior
-    const token = localStorage.getItem('token');
+    setResultado({ mostrar: false, total: 0, mensaje: '', nombrePuerto: '', nombreBuque: '' });
     
+    const token = localStorage.getItem('token');
     if (!token) {
-        alert("Debes iniciar sesión para realizar cálculos.");
+        setStatus({ loading: false, error: 'Debes iniciar sesión para realizar cálculos.' });
         return;
     }
 
@@ -50,7 +52,7 @@ const Calculadora = () => {
         let url, body;
 
         if (modoManual) {
-            // --- SIMULACIÓN ---
+            // --- MODO SIMULACIÓN ---
             url = `${API_URLS.BOLETAS}/simular`;
             body = {
                 eslora: parseFloat(manualData.eslora),
@@ -60,16 +62,20 @@ const Calculadora = () => {
                 pasajeros: parseInt(manualData.pasajeros || 0)
             };
         } else {
-            // --- BASE DE DATOS ---
-            if (!codBuque || !idPuerto || !idFuncionario) {
-                setStatus({ loading: false, error: 'Por favor completa todos los IDs' });
+            // --- MODO BASE DE DATOS (Real) ---
+            // Validación local antes de enviar
+            if (!codBuque || !idPuerto || !idFuncionario || !diasEstancia) {
+                setStatus({ loading: false, error: 'Por favor completa todos los campos obligatorios.' });
                 return;
             }
+
             url = `${API_URLS.BOLETAS}/calcular`;
             body = {
                 codBuque: codBuque,
                 idPuerto: parseInt(idPuerto),
-                idFuncionario: parseInt(idFuncionario)
+                idFuncionario: parseInt(idFuncionario),
+                tipoServicio: tipoServicio,             // Enviamos el valor del Select
+                diasEstancia: parseInt(diasEstancia)    // Enviamos el valor del Input
             };
         }
 
@@ -85,34 +91,14 @@ const Calculadora = () => {
         if (response.ok) {
             const data = await response.json();
             
-            // Procesar respuesta según el modo
             if (modoManual) {
-                // El endpoint /simular devuelve solo un número (Double)
+                // Lógica de guardado local para simulaciones
                 const simulacion = {
                     id: 'SIM-' + Date.now(),
-                    esSimulacion: true,
                     monto: data,
-                    fechaEmision: new Date().toISOString(),
-                    buque: {
-                        nombre: `Buque ${manualData.tipoBuque}`,
-                        codBuque: `SIM-${manualData.tipoBuque.toUpperCase()}`
-                    },
-                    puerto: {
-                        nombre: 'Puerto Simulado'
-                    },
-                    funcionario: {
-                        nombre: 'Funcionario Simulado'
-                    },
-                    detalles: {
-                        eslora: manualData.eslora,
-                        dias: manualData.dias,
-                        tipoBuque: manualData.tipoBuque,
-                        servicios: manualData.servicios,
-                        pasajeros: manualData.pasajeros
-                    }
+                    nombrePuerto: 'Puerto Simulado',
+                    nombreBuque: `Buque ${manualData.tipoBuque}`
                 };
-
-                // Guardar en localStorage
                 const simulaciones = JSON.parse(localStorage.getItem('simulaciones') || '[]');
                 simulaciones.push(simulacion);
                 localStorage.setItem('simulaciones', JSON.stringify(simulaciones));
@@ -120,24 +106,28 @@ const Calculadora = () => {
                 setResultado({
                     mostrar: true,
                     total: data,
-                    mensaje: "Simulación guardada en localStorage",
+                    mensaje: "Simulación guardada localmente",
                     nombrePuerto: "Puerto Simulado",
                     nombreBuque: `Buque ${manualData.tipoBuque}`
                 });
             } else {
-                // El endpoint /calcular devuelve el objeto Boleta completo
+                // Respuesta real del Backend (BoletaResponse)
                 setResultado({
                     mostrar: true,
                     total: data.monto,
-                    mensaje: `Guardado: ID ${data.idBoleta}`,
-                    // Extraemos el nombre del puerto del objeto anidado
-                    nombrePuerto: data.puerto ? data.puerto.nombre : 'Puerto Desconocido',
+                    mensaje: `Boleta generada: ID ${data.idBoleta}`,
+                    nombrePuerto: data.puerto ? data.puerto.nombre : 'Puerto Registrado',
                     nombreBuque: data.buque ? data.buque.nombre : codBuque
                 });
             }
             setStatus({ loading: false, error: '' });
         } else {
-            setStatus({ loading: false, error: 'Error en el cálculo. Verifica los datos.' });
+            // Si el backend envía un 400, aquí capturamos el error detallado
+            const errorData = await response.json().catch(() => ({}));
+            setStatus({ 
+                loading: false, 
+                error: errorData.error || 'Error en el cálculo. Revisa que los IDs existan.' 
+            });
         }
     } catch (error) {
         console.error(error);
@@ -147,6 +137,7 @@ const Calculadora = () => {
 
   const limpiar = () => {
       setCodBuque(''); setIdPuerto(''); setIdFuncionario('');
+      setDiasEstancia(''); setTipoServicio('BASICO');
       setManualData({ eslora: '', dias: '', tipoBuque: 'general', pasajeros: 0, servicios: 'basico' });
       setResultado({ mostrar: false, total: 0, mensaje: '', nombrePuerto: '' });
       setStatus({ loading: false, error: '' });
@@ -155,11 +146,10 @@ const Calculadora = () => {
   return (
     <div className="container mt-4">
       <div className="calculator">
-        <div className="calculator-header">
+        <div className="calculator-header text-center">
           <h2>Calculadora Portuaria Unificada</h2>
-          <p>Gestión centralizada de tarifas y servicios</p>
+          <p>Gestión de tarifas y servicios en tiempo real</p>
           
-          {/* INTERRUPTOR DE MODO */}
           <div className="form-check form-switch mt-3 d-flex justify-content-center gap-2">
             <input 
                 className="form-check-input" 
@@ -168,15 +158,15 @@ const Calculadora = () => {
                 onChange={() => { setModoManual(!modoManual); setResultado({ mostrar: false }); }} 
             />
             <label className="form-check-label fw-bold">
-              {modoManual ? "📝 Modo Manual (Nuevo Buque)" : "🗄️ Modo Base de Datos (Registrado)"}
+              {modoManual ? "📝 Modo Manual (Simulación)" : "🗄️ Modo Base de Datos (Oficial)"}
             </label>
           </div>
         </div>
         
-        <div className="calculator-grid">
+        <div className="calculator-grid mt-4">
           
           {modoManual ? (
-            /* --- CAMPOS MANUALES --- */
+            /* --- CAMPOS MODO MANUAL --- */
             <>
               <div className="form-group">
                 <label>Tipo de Buque</label>
@@ -184,94 +174,86 @@ const Calculadora = () => {
                     <option value="general">Carga General</option>
                     <option value="pesquero">Pesquero</option>
                     <option value="militar">Militar</option>
-                    <option value="investigacion">Investigación</option>
                     <option value="crucero">Crucero / Pasajeros</option>
                 </select>
               </div>
-
               <div className="form-group">
                 <label>Eslora (metros)</label>
-                <input name="eslora" type="number" value={manualData.eslora} onChange={handleManualChange} placeholder="Ej: 150" />
+                <input name="eslora" type="number" value={manualData.eslora} onChange={handleManualChange} placeholder="150" />
               </div>
-
               <div className="form-group">
                 <label>Días Estancia</label>
-                <input name="dias" type="number" value={manualData.dias} onChange={handleManualChange} placeholder="Ej: 3" />
-              </div>
-
-              {/* Campo condicional: Solo si es crucero mostramos pasajeros */}
-              {(manualData.tipoBuque === 'crucero' || manualData.tipoBuque === 'pasajero') && (
-                  <div className="form-group">
-                    <label>Cantidad Pasajeros</label>
-                    <input name="pasajeros" type="number" value={manualData.pasajeros} onChange={handleManualChange} placeholder="Ej: 2000" />
-                  </div>
-              )}
-
-              <div className="form-group">
-                <label>Servicios Adicionales</label>
-                <select name="servicios" value={manualData.servicios} onChange={handleManualChange} className="form-control">
-                    <option value="basico">Básico</option>
-                    <option value="medio">Medio (Remolque)</option>
-                    <option value="completo">Completo (Suministros)</option>
-                </select>
+                <input name="dias" type="number" value={manualData.dias} onChange={handleManualChange} placeholder="3" />
               </div>
             </>
           ) : (
-            /* --- CAMPOS BASE DE DATOS --- */
+            /* --- CAMPOS MODO BASE DE DATOS --- */
             <>
               <div className="form-group">
                 <label>Código del Buque</label>
-                <input 
-                    type="text" 
-                    value={codBuque} 
-                    onChange={(e) => setCodBuque(e.target.value)} 
-                    placeholder="Ej: BUQUE-001" 
-                />
-                <small className="text-muted">El sistema detectará tipo y eslora automáticamente.</small>
+                <input type="text" value={codBuque} onChange={(e) => setCodBuque(e.target.value)} placeholder="BUQUE-001" />
               </div>
+              
+              <div className="form-group">
+                  <label>Tipo de Servicio</label>
+                  <select 
+                      value={tipoServicio} 
+                      onChange={(e) => setTipoServicio(e.target.value)} 
+                      className="form-control"
+                  >
+                      {/* El texto que ve el usuario puede ser cualquiera, 
+                          pero el VALUE debe ser el que espera Java */}
+                      <option value="BASICO">Servicio Básico (Amarre)</option>
+                      <option value="MEDIO">Servicio Medio (Carga/Descarga)</option>
+                      <option value="COMPLETO">Servicio Completo (Suministros)</option>
+                  </select>
+              </div>
+
+              <div className="form-group">
+                <label>Días de Estancia</label>
+                <input type="number" value={diasEstancia} onChange={(e) => setDiasEstancia(e.target.value)} placeholder="Ej: 2" />
+              </div>
+
               <div className="form-group">
                 <label>ID Puerto</label>
-                <input type="number" value={idPuerto} onChange={(e) => setIdPuerto(e.target.value)} placeholder="Ej: 1" />
+                <input type="number" value={idPuerto} onChange={(e) => setIdPuerto(e.target.value)} placeholder="1" />
               </div>
+              
               <div className="form-group">
                 <label>ID Funcionario</label>
-                <input type="number" value={idFuncionario} onChange={(e) => setIdFuncionario(e.target.value)} placeholder="Ej: 1" />
+                <input type="number" value={idFuncionario} onChange={(e) => setIdFuncionario(e.target.value)} placeholder="1" />
               </div>
             </>
           )}
 
         </div>
         
-        {/* Mensajes de Error/Carga */}
         {status.error && <div className="alert alert-danger mt-3">{status.error}</div>}
         
         <div className="button-group mt-4">
-          <button className="btn btn-primary btn-lg" onClick={calcular} disabled={status.loading}>
-            {status.loading ? 'Calculando...' : 'Calcular Tarifa'}
+          <button className="btn btn-primary btn-lg w-100" onClick={calcular} disabled={status.loading}>
+            {status.loading ? 'Procesando...' : 'Calcular Tarifa'}
           </button>
-          <button className="btn btn-secondary mt-2" onClick={limpiar}>
-            Nueva Consulta
+          <button className="btn btn-outline-secondary w-100 mt-2" onClick={limpiar}>
+            Limpiar Datos
           </button>
         </div>
         
-        {/* --- SECCIÓN DE RESULTADOS --- */}
         {resultado.mostrar && (
-          <div className="result mt-4 p-4 shadow rounded bg-light text-center" style={{display: 'block'}}>
-            <h3 className="text-primary">Resumen de Operación</h3>
-            
-            <div className="display-4 my-3 font-weight-bold text-dark">
-                $ {resultado.total.toLocaleString('es-CL', { minimumFractionDigits: 2 })}
+          <div className="result mt-4 p-4 shadow-sm border rounded bg-white">
+            <h4 className="text-center text-secondary">Monto Total</h4>
+            <div className="display-4 text-center my-2 text-dark fw-bold">
+                $ {resultado.total.toLocaleString('es-CL')}
             </div>
-            
-            <div className="row text-start mt-4">
+            <hr />
+            <div className="row small">
                 <div className="col-6">
-                    <p><strong>Estado:</strong> <span className={modoManual ? "text-warning" : "text-success"}>{resultado.mensaje}</span></p>
-                    <p><strong>Buque:</strong> {resultado.nombreBuque}</p>
+                    <p className="mb-1"><strong>Estado:</strong> {resultado.mensaje}</p>
+                    <p className="mb-1"><strong>Buque:</strong> {resultado.nombreBuque}</p>
                 </div>
-                <div className="col-6">
-                    {/* AQUÍ SE MUESTRA EL NOMBRE DEL PUERTO */}
-                    <p><strong>Puerto:</strong> {resultado.nombrePuerto}</p>
-                    <p><strong>Fecha:</strong> {new Date().toLocaleDateString()}</p>
+                <div className="col-6 text-end">
+                    <p className="mb-1"><strong>Puerto:</strong> {resultado.nombrePuerto}</p>
+                    <p className="mb-1"><strong>Fecha:</strong> {new Date().toLocaleDateString()}</p>
                 </div>
             </div>
           </div>
