@@ -1,25 +1,32 @@
-// URL base del BFF — se inyecta desde .env según el entorno
-const BASE = import.meta.env.VITE_API_BASE;
+import axios from 'axios';
 
-// ── Auth (rutas públicas, sin token) ──────────────────────────
+// Usamos VITE_API_URL que es la que definiste en tu archivo .env
+const BASE = import.meta.env.VITE_API_URL;
+
+// ── EL OBJETO QUE TUS PÁGINAS BUSCAN (API_URLS) ────────────────
+export const API_URLS = {
+  AUTH:        `${BASE}/auth`,
+  PUERTOS:     `${BASE}/api/puertos`,
+  BUQUES:      `${BASE}/api/buques`,
+  OPERACIONES: `${BASE}/api/operaciones`,
+};
+
+// ── Rutas específicas (Por si las usas en otros lados) ──────────
 export const API_AUTH = {
   LOGIN:    `${BASE}/auth/login`,
   REGISTER: `${BASE}/auth/register`,
 };
 
-// ── Puertos ───────────────────────────────────────────────────
 export const API_PUERTOS = {
   BASE:     `${BASE}/api/puertos`,
   BY_ID:    (id) => `${BASE}/api/puertos/${id}`,
 };
 
-// ── Buques ────────────────────────────────────────────────────
 export const API_BUQUES = {
   BASE:     `${BASE}/api/buques`,
   BY_ID:    (id) => `${BASE}/api/buques/${id}`,
 };
 
-// ── Operaciones ───────────────────────────────────────────────
 export const API_OPERACIONES = {
   BASE:     `${BASE}/api/operaciones`,
   BY_ID:    (id) => `${BASE}/api/operaciones/${id}`,
@@ -27,11 +34,14 @@ export const API_OPERACIONES = {
   CALCULAR: `${BASE}/api/operaciones/calcula`,
 };
 
-// Agregar al final de src/config/api.js
-export const API_URLS = {
-  AUTH:    `${BASE}/auth`,
-  BOLETA:  `${BASE}/api/operaciones`,
-  BOLETAS: `${BASE}/api/operaciones`,
-};
+// ── Instancia de Axios ─────────────────────────────────────────
+const api = axios.create({
+  baseURL: BASE,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-export default API_URLS;
+console.log("Conectado a:", BASE);
+
+export default api;
