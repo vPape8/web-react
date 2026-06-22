@@ -1,6 +1,6 @@
 // src/components/Header.jsx
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 
 const Header = () => {
@@ -11,7 +11,7 @@ const Header = () => {
     try {
       const raw = localStorage.getItem('current_user')
       if (raw) setUser(JSON.parse(raw))
-    } catch (err) {
+    } catch {
       // ignore
     }
     const onUserChanged = (e) => {
@@ -22,7 +22,7 @@ const Header = () => {
           return
         }
         setUser(detail)
-      } catch (err) {
+      } catch {
         // ignore
       }
     }
@@ -31,7 +31,7 @@ const Header = () => {
       if (e.key === 'current_user') {
         try {
           setUser(e.newValue ? JSON.parse(e.newValue) : null)
-        } catch (err) {
+        } catch {
           setUser(null)
         }
       }
@@ -49,22 +49,22 @@ const Header = () => {
   const handleLogout = () => {
     try {
       localStorage.removeItem('current_user')
-    } catch (err) {
+    } catch {
       // ignore
     }
     setUser(null)
     try {
       window.dispatchEvent(new CustomEvent('user-changed', { detail: null }))
-    } catch (err) {
+    } catch {
       // ignore
     }
     navigate('/login')
   }
 
   return (
-    <Navbar bg="dark" variant="dark" expand="lg" className="navbar-dark">
-      <Container>
-        <Navbar.Brand as={Link} to="/home" className="d-flex align-items-center">
+    <Navbar expand="lg" className="site-navbar navbar-dark">
+      <Container fluid className="px-3 px-lg-5">
+        <Navbar.Brand as={Link} to="/home" className="site-brand d-flex align-items-center">
           <img 
             src="/logo.png" 
             alt="Logo" 
@@ -74,35 +74,36 @@ const Header = () => {
           LogistNav
         </Navbar.Brand>
         
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Toggle aria-controls="basic-navbar-nav" className="site-nav-toggle" />
         
         <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="me-auto">
-            <Nav.Link as={Link} to="/home" active>
+          <Nav className="me-auto site-nav-group">
+            <Nav.Link as={NavLink} to="/home" className={({ isActive }) => `site-nav-link ${isActive ? 'active' : ''}`}>
               Home
             </Nav.Link>
-            <Nav.Link as={Link} to="/calculadora">
+            <Nav.Link as={NavLink} to="/calculadora" className={({ isActive }) => `site-nav-link ${isActive ? 'active' : ''}`}>
               Calculadora
             </Nav.Link>
-            <Nav.Link as={Link} to="/reportes">
+            <Nav.Link as={NavLink} to="/reportes" className={({ isActive }) => `site-nav-link ${isActive ? 'active' : ''}`}>
               Reportes
             </Nav.Link>
           </Nav>
           
           <Nav id="dynamic-nav-items" className="ms-auto d-flex align-items-center gap-3">
             {user ? (
-              <div className="d-flex align-items-baseline">
-                <span className="text-light me-3 fw-bold">{user.name}</span>
+              <div className="d-flex align-items-center gap-3">
+                <span className="user-pill">{user.name}</span>
                 <Button 
                   variant="outline-danger" 
                   size="sm" 
                   onClick={handleLogout}
+                  className="logout-button"
                 >
                   Cerrar sesión
                 </Button>
               </div>
             ) : (
-              <Nav.Link as={Link} to="/login">Iniciar sesión</Nav.Link>
+              <Nav.Link as={Link} to="/login" className="site-nav-link">Iniciar sesión</Nav.Link>
             )}
           </Nav>
         </Navbar.Collapse>

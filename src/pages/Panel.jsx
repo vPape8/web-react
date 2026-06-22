@@ -28,41 +28,25 @@ const Panel = () => {
   }
 
   return (
-    <div className="container mt-4">
-      <div className="card shadow">
-        <div className="card-header bg-dark text-white">
-          <h3>Panel de Usuario</h3>
-        </div>
-        <div className="card-body text-center">
-          <div 
-            style={{
-                width: 100, height: 100, 
-                borderRadius: '50%', background: '#ddd', 
-                margin: '0 auto 20px', display: 'flex', 
-                alignItems: 'center', justifyContent: 'center',
-                fontSize: '40px'
-            }}
-          >
-            👤
-          </div>
-          
-          <h4 className="card-title">{user.name || 'Usuario'}</h4>
-          <p className="card-text badge bg-info text-dark">{user.rol || 'USER'}</p>
-          
-          <hr />
-          
-          <div className="alert alert-light text-start">
-            <h5>Información de Cuenta (AWS)</h5>
-            <p><strong>Estado:</strong> <span className="text-success">● Conectado a Base de Datos</span></p>
-            <p><strong>Permisos:</strong> Acceso a cálculo de tarifas y generación de reportes.</p>
-            <small className="text-muted">* La edición de perfil está deshabilitada en esta versión.</small>
-          </div>
+    <div className="page-shell">
+      <section className="surface-card p-4 p-md-5 panel-profile">
+        <p className="eyebrow">Sesión activa</p>
+        <h3>Panel de usuario</h3>
+        <div className="panel-avatar">👤</div>
+        <h4 className="mt-3">{user.name || 'Usuario'}</h4>
+        <span className="badge bg-info text-dark">{user.rol || 'USER'}</span>
 
-          <button className="btn btn-danger w-100 mt-3" onClick={handleLogout}>
-            Cerrar Sesión
-          </button>
+        <div className="surface-card p-3 mt-4 text-start">
+          <h5>Información de cuenta</h5>
+          <p><strong>Estado:</strong> <span className="text-success">● Conectado a Base de Datos</span></p>
+          <p><strong>Permisos:</strong> Acceso a cálculo de tarifas y generación de reportes.</p>
+          <small className="text-muted">* La edición de perfil está deshabilitada en esta versión.</small>
         </div>
-      </div>
+
+        <button className="btn btn-primary w-100 mt-4" onClick={handleLogout}>
+          Cerrar Sesión
+        </button>
+      </section>
     </div>
   )
 }

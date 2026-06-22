@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ModalDetalles from '../components/ModalDetalles';
-import { exportToExcel, exportAllData } from '../utils/exportToExcel';
 import '../assets/css/styleReporte.css';
-import { API_URLS } from '../config/api';
+import { API_URLS, API_REPORTES } from '../config/api';
 
 const Reportes = () => {
   const [calculos, setCalculos] = useState([]);
@@ -12,11 +11,8 @@ const Reportes = () => {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarDropdown, setMostrarDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  // Cargar datos al montar
-  useEffect(() => {
-    cargarDatosCombinados();
-  }, []);
+  const [exportando, setExportando] = useState(false);
+  const [estadoExportacion, setEstadoExportacion] = useState('');
 
   // --- LÓGICA DE CARGA HÍBRIDA (BD + LOCALSTORAGE) ---
   const cargarDatosCombinados = async () => {
@@ -65,6 +61,11 @@ const Reportes = () => {
     calcularEstadisticas(datosNormalizados);
     setLoading(false);
   };
+
+  // Cargar datos al montar
+  useEffect(() => {
+    cargarDatosCombinados();
+  }, []);
 
   // Esta función es clave: Convierte el objeto Java o el objeto LocalStorage a un formato común
   const normalizarBoleta = (item) => {
@@ -151,7 +152,7 @@ const Reportes = () => {
             } else {
                 alert("No se pudo eliminar de la base de datos (Revisa permisos).");
             }
-        } catch (error) {
+        } catch {
             alert("Error de conexión al intentar eliminar.");
         }
     }
@@ -172,23 +173,133 @@ const Reportes = () => {
 
   const exportarExcel = async () => {
     if (calculosFiltrados.length === 0) return alert('Sin datos');
+    const token = localStorage.getItem('token');
+
+    setMostrarDropdown(false);
+    setExportando(true);
+    setEstadoExportacion('Preparando exportación...');
+
     try {
-      await exportToExcel(calculosFiltrados, 'reporte_portuario');
+      const response = await fetch(API_REPORTES.EXPORT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Accept: 'application/json, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+        body: JSON.stringify({
+          reporte: 'reportes-portuarios',
+          filtro: filtroTipo,
+          totalRegistros: calculosFiltrados.length,
+          datos: calculosFiltrados,
+        }),
+      });
+
+      const contentType = response.headers.get('content-type') || '';
+
+      if (response.ok) {
+        if (contentType.includes('application/json')) {
+          const data = await response.json();
+
+          if (data.downloadUrl || data.url) {
+            setEstadoExportacion('Descargando archivo...');
+            await downloadFromUrl(data.downloadUrl || data.url, token, data.fileName || getFileName());
+          } else if (data.jobId || data.job || data.id) {
+            setEstadoExportacion(data.message || 'Exportación en cola...');
+            await waitForReport(data.jobId || data.job || data.id, token);
+          } else {
+            setEstadoExportacion(data.message || 'Exportación solicitada');
+          }
+        } else {
+          const blob = await response.blob();
+          downloadBlob(blob, getFileName());
+          setEstadoExportacion('Exportación completada');
+        }
+
+        return;
+      }
+
+      throw new Error(`Error ${response.status}`);
     } catch (error) {
       console.error(error);
-      alert('Error al exportar');
+
+      const { exportToExcel } = await import('../utils/exportToExcel');
+      await exportToExcel(calculosFiltrados, 'reporte_portuario');
+      setEstadoExportacion('Exportación local usada como respaldo');
+      alert('El backend no respondió para la exportación; se usó la exportación local como respaldo.');
+    } finally {
+      setExportando(false);
     }
   };
 
   const toggleDropdown = () => setMostrarDropdown(!mostrarDropdown);
   const closeDropdown = () => setMostrarDropdown(false);
 
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const getFileName = () => `reporte_portuario_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+  const downloadBlob = (blob, fileName) => {
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  };
+
+  const downloadFromUrl = async (url, token, fileName) => {
+    const response = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (!response.ok) {
+      throw new Error('No se pudo descargar el archivo generado');
+    }
+
+    const blob = await response.blob();
+    downloadBlob(blob, fileName);
+  };
+
+  const waitForReport = async (jobId, token) => {
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      const response = await fetch(API_REPORTES.STATUS(jobId), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (!response.ok) {
+        throw new Error('No se pudo consultar el estado de la exportación');
+      }
+
+      const data = await response.json();
+      const status = String(data.status || data.estado || '').toLowerCase();
+      const ready = data.downloadUrl || data.url || status === 'completed' || status === 'ready' || data.ready === true;
+
+      if (status === 'failed' || status === 'error') {
+        throw new Error(data.message || data.error || 'La exportación falló');
+      }
+
+      if (ready) {
+        const downloadUrl = data.downloadUrl || data.url || API_REPORTES.DOWNLOAD(jobId);
+        await downloadFromUrl(downloadUrl, token, data.fileName || getFileName());
+        return;
+      }
+
+      setEstadoExportacion(data.message || 'Procesando exportación...');
+      await sleep(2000);
+    }
+
+    throw new Error('La exportación tardó demasiado');
+  };
+
   // --- RENDER ---
 
-  if (loading) return <div className="container mt-4"><div className="alert alert-info">Cargando datos del sistema...</div></div>;
+  if (loading) return <div className="page-shell reportes-page"><div className="alert alert-info">Cargando datos del sistema...</div></div>;
 
   return (
-    <div className="container mt-4">
+    <div className="page-shell reportes-page">
       <div className="reporte-header">
         <h1>Reportes de Operaciones</h1>
         <p>Vista unificada: Base de Datos (AWS) + Simulaciones</p>
@@ -227,16 +338,20 @@ const Reportes = () => {
 
         <div className="acciones">
           <div className="dropdown">
-            <button className="btn btn-exportar dropdown-toggle" onClick={toggleDropdown}>Exportar</button>
+            <button className="btn btn-exportar dropdown-toggle" onClick={toggleDropdown} disabled={exportando}>
+              {exportando ? 'Exportando...' : 'Exportar'}
+            </button>
             {mostrarDropdown && (
               <ul className="dropdown-menu show">
                 <li><button className="dropdown-item" onClick={() => { exportarExcel(); closeDropdown(); }}>📊 Descargar Excel</button></li>
               </ul>
             )}
           </div>
-          <button className="btn btn-limpiar" onClick={limpiarSimulaciones}>🧹 Limpiar Simulaciones</button>
+          <button className="btn btn-limpiar" onClick={limpiarSimulaciones} disabled={exportando}>🧹 Limpiar Simulaciones</button>
         </div>
       </div>
+
+      {estadoExportacion && <div className="alert alert-info">{estadoExportacion}</div>}
 
       {/* Tabla de Datos */}
       <div className="tabla-reportes">

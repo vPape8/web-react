@@ -1,34 +1,33 @@
 // src/App.jsx
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
-import Home from './pages/Home';
-import InicioSeccion from './pages/InicioSeccion';
-import Calculadora from './pages/Calculadora';
-import Comerciales from './pages/Comerciales';
-import Especiales from './pages/Especiales';
-import Pasajeros from './pages/Pasajeros';
-import Reportes from './pages/Reportes';
-import Contacto from './pages/Contacto';
-import Panel from './pages/Panel';
 import PrivateRoute from './components/PrivateRoute';
-import { Navigate } from 'react-router-dom';
+
+const Home = lazy(() => import('./pages/Home'));
+const InicioSeccion = lazy(() => import('./pages/InicioSeccion'));
+const Calculadora = lazy(() => import('./pages/Calculadora'));
+const Comerciales = lazy(() => import('./pages/Comerciales'));
+const Reportes = lazy(() => import('./pages/Reportes'));
+const Contacto = lazy(() => import('./pages/Contacto'));
+const Panel = lazy(() => import('./pages/Panel'));
+
 function App() {
   return (
     <Router>
       <div className="App">
-        <Layout>
+        <Suspense fallback={<div className="page-shell">Cargando...</div>}>
           <Routes>
-                <Route path="/login" element={<InicioSeccion />} />
-                <Route path="/" element={<InicioSeccion />} />
-                <Route path="/home" element={<PrivateRoute><Home/></PrivateRoute>} />
-                <Route path="/calculadora" element={<PrivateRoute><Calculadora/></PrivateRoute>} />
-                <Route path="/comerciales" element={<PrivateRoute><Comerciales/></PrivateRoute>} /> 
-                <Route path="/reportes" element={<PrivateRoute><Reportes/></PrivateRoute>} />
-                <Route path="/contacto" element={<PrivateRoute><Contacto/></PrivateRoute>} />
-                <Route path="/panel" element={<PrivateRoute><Panel/></PrivateRoute>} />
+            <Route path="/" element={<InicioSeccion />} />
+            <Route path="/login" element={<InicioSeccion />} />
+            <Route path="/home" element={<Layout><PrivateRoute><Home /></PrivateRoute></Layout>} />
+            <Route path="/calculadora" element={<Layout><PrivateRoute><Calculadora /></PrivateRoute></Layout>} />
+            <Route path="/comerciales" element={<Layout><PrivateRoute><Comerciales /></PrivateRoute></Layout>} />
+            <Route path="/reportes" element={<Layout><PrivateRoute><Reportes /></PrivateRoute></Layout>} />
+            <Route path="/contacto" element={<Layout><PrivateRoute><Contacto /></PrivateRoute></Layout>} />
+            <Route path="/panel" element={<Layout><PrivateRoute><Panel /></PrivateRoute></Layout>} />
           </Routes>
-        </Layout>
+        </Suspense>
       </div>
     </Router>
   );

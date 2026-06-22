@@ -82,86 +82,102 @@ const InicioSeccion = () => {
   }
 
   return (
-    <div className="container mt-4" style={{ maxWidth: 400 }}>
-      <div className="card shadow p-4">
-        <h2 className="text-center mb-4">{mode === 'login' ? 'Iniciar Sesión' : 'Registro'}</h2>
-        <form onSubmit={mode === 'login' ? handleLogin : handleRegister}>
-            
-            {/* Campos adicionales para el modo Registro */}
+    <div className="auth-page">
+      <div className="auth-shell">
+        <section className="auth-hero">
+          <div className="auth-brand">
+            <img src="/logo.png" alt="LogistNav" className="auth-logo" />
+            <span>LogistNav</span>
+          </div>
+          <h1>{mode === 'login' ? 'Acceso portuario sin ruido' : 'Crea tu acceso y sigue operando'}</h1>
+          <p>Una sola entrada para cálculo, reportes y panel.</p>
+{/*           <ul>
+            <li>Login limpio, sin header ni footer.</li>
+            <li>Ruta directa al home o panel según rol.</li>
+            <li>Registro y acceso comparten el mismo lenguaje visual.</li>
+          </ul> */}
+        </section>
+
+        <section className="auth-card card shadow-lg">
+          <div className="auth-card-header">
+            <p className="eyebrow">{mode === 'login' ? 'Bienvenido' : 'Registro nuevo'}</p>
+            <h2>{mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}</h2>
+            <p>Usa las credenciales para entrar al sistema portuario.</p>
+          </div>
+
+          <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="auth-form">
             {mode === 'register' && (
-              <>
+              <div className="auth-grid-two">
                 <div className="mb-3">
                   <label className="form-label">Nombre</label>
-                  <input 
-                    name="nombre" 
+                  <input
+                    name="nombre"
                     type="text"
-                    value={form.nombre} 
-                    onChange={handleChange} 
-                    className="form-control" 
+                    value={form.nombre}
+                    onChange={handleChange}
+                    className="form-control"
                     placeholder="Tu nombre"
-                    required 
+                    required
                   />
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Apellido</label>
-                  <input 
-                    name="apellido" 
+                  <input
+                    name="apellido"
                     type="text"
-                    value={form.apellido} 
-                    onChange={handleChange} 
-                    className="form-control" 
+                    value={form.apellido}
+                    onChange={handleChange}
+                    className="form-control"
                     placeholder="Tu apellido"
-                    required 
+                    required
                   />
                 </div>
-              </>
+              </div>
             )}
 
             <div className="mb-3">
               <label className="form-label">Correo Electrónico</label>
-              <input 
-                name="email" 
+              <input
+                name="email"
                 type="email"
-                value={form.email} 
-                onChange={handleChange} 
-                className="form-control" 
+                value={form.email}
+                onChange={handleChange}
+                className="form-control"
                 placeholder="ejemplo@correo.com"
-                required 
+                required
               />
             </div>
 
             <div className="mb-3">
               <label className="form-label">Contraseña</label>
-              <input 
-                name="password" 
-                type="password" 
-                value={form.password} 
-                onChange={handleChange} 
-                className="form-control" 
-                required 
+              <input
+                name="password"
+                type="password"
+                value={form.password}
+                onChange={handleChange}
+                className="form-control"
+                required
               />
             </div>
 
-            <div className="d-grid gap-2">
-              <button type="submit" className="btn btn-primary">
-                {mode === 'login' ? 'Entrar' : 'Registrar'}
-              </button>
-            </div>
-            
-            <div className="mt-3 text-center">
-              <button 
-                type="button" 
-                className="btn btn-link" 
-                onClick={() => {
-                    setMode(mode === 'login' ? 'register' : 'login');
-                    setMessage('');
-                }}
-              >
-                {mode === 'login' ? '¿Crear cuenta?' : '¿Ya tienes cuenta?'}
-              </button>
-            </div>
-        </form>
-        {message && <div className="alert alert-info mt-3">{message}</div>}
+            <button type="submit" className="btn btn-primary w-100 auth-submit">
+              {mode === 'login' ? 'Entrar' : 'Registrar'}
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-link auth-switch"
+              onClick={() => {
+                setMode(mode === 'login' ? 'register' : 'login')
+                setMessage('')
+              }}
+            >
+              {mode === 'login' ? '¿Crear cuenta?' : '¿Ya tienes cuenta?'}
+            </button>
+          </form>
+
+          {message && <div className="alert alert-info mt-3 mb-0">{message}</div>}
+        </section>
       </div>
     </div>
   )

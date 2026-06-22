@@ -6,9 +6,19 @@ const BASE = import.meta.env.VITE_API_URL;
 // ── EL OBJETO QUE TUS PÁGINAS BUSCAN (API_URLS) ────────────────
 export const API_URLS = {
   AUTH:        `${BASE}/auth`,
+  BOLETA:      `${BASE}/api/boleta`,
+  BOLETAS:     `${BASE}/api/boletas`,
   PUERTOS:     `${BASE}/api/puertos`,
   BUQUES:      `${BASE}/api/buques`,
   OPERACIONES: `${BASE}/api/operaciones`,
+  REPORTES:    `${BASE}/api/reportes`,
+};
+
+export const API_REPORTES = {
+  BASE:     `${BASE}/api/reportes`,
+  EXPORT:   `${BASE}/api/reportes/export`,
+  STATUS:   (jobId) => `${BASE}/api/reportes/export/${jobId}`,
+  DOWNLOAD: (jobId) => `${BASE}/api/reportes/export/${jobId}/download`,
 };
 
 // ── Rutas específicas (Por si las usas en otros lados) ──────────
