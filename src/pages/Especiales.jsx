@@ -1,7 +1,7 @@
 // src/pages/Especiales.jsx
 import React, { useState } from 'react';
 import '../assets/css/styleCalcula.css';
-import { API_URLS } from '../config/api';
+import { API_URLS , API_OPERACIONES} from '../config/api';
 
 const Especiales = () => {
   

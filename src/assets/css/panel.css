@@ -1,13 +1,12 @@
-/* Estilos específicos para la vista Panel */
 .panel-profile {
-  background: #fff;
-  border: 1px solid #e6e6e6;
-  padding: 16px;
-  border-radius: 8px;
+  padding: 18px;
+  border-radius: 24px;
+  text-align: center;
 }
 
 .panel-profile h3 {
   margin-top: 0;
+  color: var(--accent);
 }
 
 .panel-profile img {

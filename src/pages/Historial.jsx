@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../assets/css/styleReporte.css';
-import { API_URLS } from '../config/api';
+import { API_URLS, API_REPORTES, API_OPERACIONES } from '../config/api';
 
 const Historial = () => {
   const [boletas, setBoletas] = useState([]);
@@ -21,7 +21,7 @@ const Historial = () => {
 
     try {
       // Petición GET al backend
-      const response = await fetch(API_URLS.BOLETAS, {
+      const response = await fetch(API_OPERACIONES.BASE, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

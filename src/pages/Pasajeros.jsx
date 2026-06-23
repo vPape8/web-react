@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import '../assets/css/styleCalcula.css'; // Mantiene tus estilos originales
-import { API_URLS } from '../config/api';
+import { API_URLS , API_OPERACIONES} from '../config/api';
 
 const Pasajeros = () => {
   // Usamos los IDs requeridos por el Backend

@@ -9,6 +9,14 @@ export const API_URLS = {
   PUERTOS:     `${BASE}/api/puertos`,
   BUQUES:      `${BASE}/api/buques`,
   OPERACIONES: `${BASE}/api/operaciones`,
+  REPORTES:    `${BASE}/api/reportes`,
+};
+
+export const API_REPORTES = {
+  BASE:     `${BASE}/api/reportes`,
+  EXPORT:   `${BASE}/api/reportes/export`,
+  STATUS:   (jobId) => `${BASE}/api/reportes/export/${jobId}`,
+  DOWNLOAD: (jobId) => `${BASE}/api/reportes/export/${jobId}/download`,
 };
 
 // ── Rutas específicas (Por si las usas en otros lados) ──────────
@@ -31,7 +39,7 @@ export const API_OPERACIONES = {
   BASE:     `${BASE}/api/operaciones`,
   BY_ID:    (id) => `${BASE}/api/operaciones/${id}`,
   SIMULAR:  `${BASE}/api/operaciones/simular`,
-  CALCULAR: `${BASE}/api/operaciones/calcula`,
+  CALCULAR: `${BASE}/api/operaciones/calcular`,
 };
 
 // ── Instancia de Axios ─────────────────────────────────────────
