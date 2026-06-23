@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import '../assets/css/styleCalcula.css';
-import { API_URLS } from '../config/api';
+import { API_URLS, API_OPERACIONES} from '../config/api';
 
 // URL del backend desde configuración centralizada
-const API_URL = API_URLS.BOLETA;
+const API_URL = API_OPERACIONES.BASE;
 
 const Comerciales = () => {
   // Estados para los IDs que pide el Backend

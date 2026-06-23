@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ModalDetalles from '../components/ModalDetalles';
 import '../assets/css/styleReporte.css';
-import { API_URLS, API_REPORTES } from '../config/api';
+import { API_URLS, API_REPORTES, API_OPERACIONES } from '../config/api';
 
 const Reportes = () => {
   const [calculos, setCalculos] = useState([]);
@@ -25,7 +25,7 @@ const Reportes = () => {
     // 1. Obtener Datos Reales de AWS (Si hay login)
     if (token) {
         try {
-            const response = await fetch(API_URLS.BOLETAS, {
+            const response = await fetch(API_OPERACIONES.BASE, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,

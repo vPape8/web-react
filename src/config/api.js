@@ -6,8 +6,6 @@ const BASE = import.meta.env.VITE_API_URL;
 // ── EL OBJETO QUE TUS PÁGINAS BUSCAN (API_URLS) ────────────────
 export const API_URLS = {
   AUTH:        `${BASE}/auth`,
-  BOLETA:      `${BASE}/api/boleta`,
-  BOLETAS:     `${BASE}/api/boletas`,
   PUERTOS:     `${BASE}/api/puertos`,
   BUQUES:      `${BASE}/api/buques`,
   OPERACIONES: `${BASE}/api/operaciones`,
@@ -41,7 +39,7 @@ export const API_OPERACIONES = {
   BASE:     `${BASE}/api/operaciones`,
   BY_ID:    (id) => `${BASE}/api/operaciones/${id}`,
   SIMULAR:  `${BASE}/api/operaciones/simular`,
-  CALCULAR: `${BASE}/api/operaciones/calcula`,
+  CALCULAR: `${BASE}/api/operaciones/calcular`,
 };
 
 // ── Instancia de Axios ─────────────────────────────────────────

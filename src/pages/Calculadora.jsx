@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import '../assets/css/styleCalcula.css';
-import { API_URLS } from '../config/api';
+import { API_URLS, API_OPERACIONES } from '../config/api';
 
 const Calculadora = () => {
   // Switch de Modo
@@ -15,12 +15,11 @@ const Calculadora = () => {
 
   // --- ESTADOS MODO MANUAL (Simulación) ---
   const [manualData, setManualData] = useState({
-    eslora: '',
+    codBuque: '',
+    idPuerto: '',
     dias: '',
-    tipoBuque: 'general',
-    pasajeros: 0,
-    servicios: 'basico'
-  });
+    servicios: 'BASICO'
+ });
 
   // --- RESULTADOS ---
   const [resultado, setResultado] = useState({ 
@@ -52,15 +51,15 @@ const Calculadora = () => {
         let url, body;
 
         if (modoManual) {
-            // --- MODO SIMULACIÓN ---
-            url = `${API_URLS.BOLETAS}/simular`;
+            // --- MODO SIMULACIÓN --- usa los mismos campos que el backend espera
+            url = `${API_OPERACIONES.SIMULAR}`;
             body = {
-                eslora: parseFloat(manualData.eslora),
-                dias: parseInt(manualData.dias),
-                tipoBuque: manualData.tipoBuque,
-                servicios: manualData.servicios,
-                pasajeros: parseInt(manualData.pasajeros || 0)
+                codBuque: manualData.codBuque,
+                idPuerto: parseInt(manualData.idPuerto),
+                diasEstancia: parseInt(manualData.dias),
+                tipoServicio: manualData.servicios.toUpperCase()
             };
+            console.log("Body enviado:", JSON.stringify(body));
         } else {
             // --- MODO BASE DE DATOS (Real) ---
             // Validación local antes de enviar
@@ -69,7 +68,7 @@ const Calculadora = () => {
                 return;
             }
 
-            url = `${API_URLS.BOLETAS}/calcular`;
+            url = `${API_OPERACIONES.CALCULAR}`;
             body = {
                 codBuque: codBuque,
                 idPuerto: parseInt(idPuerto),
@@ -169,21 +168,24 @@ const Calculadora = () => {
             /* --- CAMPOS MODO MANUAL --- */
             <>
               <div className="form-group">
-                <label>Tipo de Buque</label>
-                <select name="tipoBuque" value={manualData.tipoBuque} onChange={handleManualChange} className="form-control">
-                    <option value="general">Carga General</option>
-                    <option value="pesquero">Pesquero</option>
-                    <option value="militar">Militar</option>
-                    <option value="crucero">Crucero / Pasajeros</option>
-                </select>
+                <label>Código de Buque</label>
+                <input name="codBuque" type="text" value={manualData.codBuque} onChange={handleManualChange} placeholder="Ej: BUQ-001" />
               </div>
               <div className="form-group">
-                <label>Eslora (metros)</label>
-                <input name="eslora" type="number" value={manualData.eslora} onChange={handleManualChange} placeholder="150" />
+                <label>ID Puerto</label>
+                <input name="idPuerto" type="number" value={manualData.idPuerto} onChange={handleManualChange} placeholder="Ej: 1" />
               </div>
               <div className="form-group">
-                <label>Días Estancia</label>
+                <label>Días de Estancia</label>
                 <input name="dias" type="number" value={manualData.dias} onChange={handleManualChange} placeholder="3" />
+              </div>
+              <div className="form-group">
+                <label>Tipo de Servicio</label>
+                <select name="servicios" value={manualData.servicios} onChange={handleManualChange} className="form-control">
+                    <option value="BASICO">Básico</option>
+                    <option value="MEDIO">Medio</option>
+                    <option value="COMPLETO">Completo</option>
+                </select>
               </div>
             </>
           ) : (
